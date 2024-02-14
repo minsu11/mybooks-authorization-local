@@ -8,7 +8,7 @@ public class AuthorizationApplication {
 
 	public static void main(String[] args) {
 
-		System.out.println("For Jenkins Test2");
+		System.out.println("For Jenkins Test3");
 		SpringApplication.run(AuthorizationApplication.class, args);
 	}
 
