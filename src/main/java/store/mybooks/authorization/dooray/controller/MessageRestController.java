@@ -1,11 +1,9 @@
 package store.mybooks.authorization.dooray.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import store.mybooks.authorization.dooray.config.MessageBot;
@@ -28,7 +26,7 @@ import store.mybooks.authorization.dooray.service.MessageSenderService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/auth")
-public class DoorayMessageRestController {
+public class MessageRestController {
 
     private final MessageSenderService messageSenderService;
 
