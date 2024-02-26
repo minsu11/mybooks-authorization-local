@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import store.mybooks.authorization.dooray.config.MessageBot;
-import store.mybooks.authorization.dooray.dto.request.PhoneNumberAuthRequest;
 import store.mybooks.authorization.dooray.dto.response.PhoneNumberAuthResponse;
 import store.mybooks.authorization.dooray.service.MessageSenderService;
 
