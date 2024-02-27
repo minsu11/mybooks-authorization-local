@@ -23,6 +23,14 @@ public class MessageSenderService {
 
     private final MessageSender messageSender;
 
+    /**
+     * methodName : sendMessage
+     * author : masiljangajji
+     * description : 랜덤한 4자리 수를 만들어 Dooray 메신저로 보냄
+     *
+     * @param messageBot bot
+     * @return string
+     */
     public String sendMessage(MessageBot messageBot) {
 
         Random random = new Random();

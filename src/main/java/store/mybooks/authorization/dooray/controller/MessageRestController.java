@@ -13,7 +13,7 @@ import store.mybooks.authorization.dooray.service.MessageSenderService;
 
 /**
  * packageName    : store.mybooks.authorization.controller.dooray
- * fileName       : DoorayMessageController
+ * fileName       : MessageRestController
  * author         : masiljangajji
  * date           : 2/26/24
  * description    :
@@ -31,6 +31,13 @@ public class MessageRestController {
 
     private final MessageBot messageBot;
 
+    /**
+     * methodName : getPhoneNumberAuthMessage
+     * author : masiljangajji
+     * description : 유저 회원가입 및 전화번호 변경시 Dooray 로 인증번호를 만들어 보냄
+     *
+     * @return response entity
+     */
     @GetMapping("/phone")
     public ResponseEntity<PhoneNumberAuthResponse> getPhoneNumberAuthMessage() {
 
