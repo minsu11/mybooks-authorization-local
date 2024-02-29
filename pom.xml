@@ -53,6 +53,8 @@
 <!--			<artifactId>spring-security-test</artifactId>-->
 <!--			<scope>test</scope>-->
 <!--		</dependency>-->
+		<!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt -->
+
 		<dependency>
 			<groupId>com.nhn.dooray.messenger</groupId>
 			<artifactId>dooray-hook-sender</artifactId>
