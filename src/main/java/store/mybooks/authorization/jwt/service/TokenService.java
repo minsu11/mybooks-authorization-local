@@ -1,7 +1,9 @@
 package store.mybooks.authorization.jwt.service;
 
 import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
+import java.io.OutputStream;
 import java.util.Date;
 import org.springframework.stereotype.Service;
 import store.mybooks.authorization.jwt.config.JwtConfig;
@@ -37,10 +39,12 @@ public class TokenService {
         return JWT.create()
                 .withSubject(String.valueOf(tokenRequest.getUserId())) // 토큰이름
                 .withExpiresAt(new Date(System.currentTimeMillis() + JwtConfig.EXPIRATION_TIME)) // 토큰만료일
-                .withClaim("id", tokenRequest.getUserId()) // 페이로드에 id : 회원 PK  넣음
+                .withClaim("this", tokenRequest.getUserId()) // 페이로드에 id : 회원 PK  넣음
                 .withClaim("authorization", role) // 회원 권한
                 .withClaim("status", tokenRequest.getStatus()) // 회원상태
                 .sign(Algorithm.HMAC512(JwtConfig.SECRET)); // 해쉬로 암호처리
+
+
     }
 
     public String createRefreshToken(String accessToken) {
