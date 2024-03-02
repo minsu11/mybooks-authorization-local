@@ -43,13 +43,5 @@ public class TokenRestController {
         return new ResponseEntity<>(new TokenResponse(accessToken, refreshToken), HttpStatus.CREATED);
     }
 
-    @GetMapping
-    public ResponseEntity<String> test(HttpServletRequest request) {
-        String token=request.getHeader("token");
-        System.out.println(token);
-
-        return new ResponseEntity<>("good", HttpStatus.OK);
-    }
-
 
 }
