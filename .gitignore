@@ -169,6 +169,3 @@ Temporary Items
 
 # idea 전부 무시
 .idea/**
-
-# 체크스타일은 올라가야함.
-!.idea/checkstyle-idea.xml
