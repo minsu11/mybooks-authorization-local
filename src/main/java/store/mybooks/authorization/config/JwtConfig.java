@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -20,15 +21,20 @@ import org.springframework.stereotype.Component;
  */
 
 @Getter
-@Setter
 @Component
 @ConfigurationProperties(prefix = "jwt")
 public class JwtConfig {
 
+    @Value("${jwt.secret}")
     private String secret;
 
+    @Value("${jwt.issuer}")
     private String issuer;
 
-    private Long expiration;
+    @Value("${jwt.access.expiration}")
+    private Long accessExpiration;
+
+    @Value("${jwt.refresh.expiration}")
+    private Long refreshExpiration;
 
 }
