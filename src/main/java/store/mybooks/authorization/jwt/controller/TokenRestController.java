@@ -70,7 +70,28 @@ public class TokenRestController {
         return new ResponseEntity<>(new TokenResponse(accessToken), HttpStatus.CREATED);
     }
 
+    @PostMapping("/refresh")
+    public ResponseEntity<RefreshTokenResponse> refreshAccessToken(RefreshTokenRequest refreshTokenRequest,
+                                                                        HttpServletRequest request) {
 
+        String key = redisConfig.getRedisKey() + refreshTokenRequest.getAccessToken() + request.getRemoteAddr();
+
+        String refreshToken = redisService.getValues(key);
+
+        if (Objects.isNull(refreshToken)) { // null 이면 만료됐거나 , 유효하지 않은 것
+            return new ResponseEntity<>(new RefreshTokenResponse(false, null), HttpStatus.OK);
+        }
+
+        String newAccessToken = authService.refreshAccessToken(refreshTokenRequest); // 엑세스토큰 새로 만들고
+        redisService.deleteValues(key); // 기존에 있던 리프래시 토큰을 삭제
+
+        // 리프래시토큰 새롭게 설정해주기
+        redisService.setValues(keyConfig.keyStore(redisConfig.getRedisKey()) + newAccessToken + request.getRemoteAddr(),
+                keyConfig.keyStore(redisConfig.getRedisValue()),
+                Duration.ofMillis(jwtConfig.getRefreshExpiration()));
+
+        return new ResponseEntity<>(new RefreshTokenResponse(true, newAccessToken), HttpStatus.CREATED);
+    }
 
 
 }
