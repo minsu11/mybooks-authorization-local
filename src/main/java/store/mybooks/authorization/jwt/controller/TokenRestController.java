@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import store.mybooks.authorization.config.JwtConfig;
 import store.mybooks.authorization.config.KeyConfig;
 import store.mybooks.authorization.config.RedisConfig;
+import store.mybooks.authorization.jwt.dto.request.LogoutRequest;
 import store.mybooks.authorization.jwt.dto.request.RefreshTokenRequest;
 import store.mybooks.authorization.jwt.dto.request.TokenRequest;
 import store.mybooks.authorization.jwt.dto.response.RefreshTokenResponse;
@@ -103,6 +105,14 @@ public class TokenRestController {
 
         // 새로운 엑세스 토큰을 발행 함
         return new ResponseEntity<>(new RefreshTokenResponse(true, newAccessToken), HttpStatus.CREATED);
+    }
+
+    @DeleteMapping("/logout")
+    public ResponseEntity<Void> deleteRefreshToken(LogoutRequest logoutRequest,HttpServletRequest request){
+
+        // 기존에 있는 토큰으로는 재발급 못받도록 , 리프래시 토큰 삭제
+        redisService.deleteValues(logoutRequest.getAccessToken()+request.getRemoteAddr());
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
 
