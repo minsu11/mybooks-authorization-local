@@ -62,21 +62,27 @@ public class TokenService {
                 .sign(Algorithm.HMAC512(keyConfig.keyStore(jwtConfig.getSecret()))); // 시크릿은 key manager 로 관리
     }
 
-    public String refreshAccessToken(RefreshTokenRequest refreshTokenRequest){
+    public String refreshAccessToken(RefreshTokenRequest refreshTokenRequest) {
 
-        JWTVerifier verifier = JWT.require(Algorithm.HMAC512(keyConfig.keyStore(jwtConfig.getSecret())))
-                .build();
-        DecodedJWT jwt = verifier.verify(refreshTokenRequest.getAccessToken());
+        DecodedJWT jwt = JWT.decode(refreshTokenRequest.getAccessToken());
 
         Date issuedAt = new Date(System.currentTimeMillis());
 
+        String authority= String.valueOf(jwt.getClaim("authority"));
+        String status = String.valueOf(jwt.getClaim("status"));
+
+        authority= authority.replaceAll("\"","");
+        status=status.replaceAll("\"","");
+
+
+
         return JWT.create()
                 .withIssuer(jwtConfig.getIssuer())
-                .withIssuedAt(Instant.parse(jwt.getSubject()))
+                .withSubject(jwt.getSubject())
                 .withIssuedAt(issuedAt)
                 .withExpiresAt(new Date(issuedAt.getTime() + jwtConfig.getAccessExpiration())) // 토큰만료일
-                .withClaim("authority", String.valueOf(jwt.getClaim("authority"))) // 회원 권한
-                .withClaim("status", String.valueOf(jwt.getClaim("status"))) // 회원상태
+                .withClaim("authority", authority) // 회원 권한
+                .withClaim("status", status) // 회원상태
                 .sign(Algorithm.HMAC512(keyConfig.keyStore(jwtConfig.getSecret()))); // 시크릿은 key manager 로 관리
 
     }
