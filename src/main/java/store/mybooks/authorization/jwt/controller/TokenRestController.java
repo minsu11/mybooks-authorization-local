@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -49,6 +50,8 @@ public class TokenRestController {
 
     private final KeyConfig keyConfig;
 
+    private final PasswordEncoder passwordEncoder;
+
 
     @PostMapping
     public ResponseEntity<TokenResponse> createToken(
@@ -58,13 +61,19 @@ public class TokenRestController {
 
         System.out.println("!!!!");
         System.out.println(request.getRemoteAddr());
-        //  Key {ip주소} - Value {리프래시토큰}
+        System.out.println(accessToken + request.getRemoteAddr() + " 내가 넣을 키 값");
 
-        // 키메니저에서 설정한 비밀 값 + 엑세스 토큰 + 유저 ip 주소
-        // 엑세스 토큰은 ip주소가 우연히 같을 수 있기 떄문에 넣어줌
+        // Key = 엑세스 토큰 + ip 주소
+        // Value = (키메너지가 관리하는 암호 + ip주소) 를 BCrypt 로 잠근 값
+        // 이것에 대해서 만료시간을 줌 , 일정시간이 지나면 자동으로 삭제되게 만듦
 
-        redisService.setValues(keyConfig.keyStore(redisConfig.getRedisKey()) + accessToken + request.getRemoteAddr(),
-                keyConfig.keyStore(redisConfig.getRedisValue()),
+        // 재발급시 엑세스 토큰 + ip주소로 찾고 ,  Value를 키메너지가 관리하는 암호 + ip주소 로 matches 로 검증함
+
+        // 만약 레디스 서버가 털리더라도 키메니저가 관리하는 암호를 모르기 떄문에 mybooks가 발급하지 않은 Value를 집어넣으면 matches 에서 실패하게 됨
+        // 따라서 리프래시토큰에 대한 변조를 막을 수 있고 , 만료시간이 지나면 자동으로 사라지기 떄문에 관리가 가능 함
+
+        redisService.setValues(accessToken + request.getRemoteAddr(),
+                passwordEncoder.encode(keyConfig.keyStore(redisConfig.getRedisValue() + request.getRemoteAddr())),
                 Duration.ofMillis(jwtConfig.getRefreshExpiration()));
 
         return new ResponseEntity<>(new TokenResponse(accessToken), HttpStatus.CREATED);
@@ -72,24 +81,27 @@ public class TokenRestController {
 
     @PostMapping("/refresh")
     public ResponseEntity<RefreshTokenResponse> refreshAccessToken(RefreshTokenRequest refreshTokenRequest,
-                                                                        HttpServletRequest request) {
+                                                                   HttpServletRequest request) {
 
-        String key = redisConfig.getRedisKey() + refreshTokenRequest.getAccessToken() + request.getRemoteAddr();
+        String key = refreshTokenRequest.getAccessToken() + request.getRemoteAddr();
 
         String refreshToken = redisService.getValues(key);
 
-        if (Objects.isNull(refreshToken)) { // null 이면 만료됐거나 , 유효하지 않은 것
-            return new ResponseEntity<>(new RefreshTokenResponse(false, null), HttpStatus.OK);
+        // 만료됐는지 , 유효한지 검증
+        if (Objects.isNull(refreshToken) || !passwordEncoder.matches(key,
+                refreshToken)) { // null 이면 만료된 것 , BCrypt 로 잠근 값을 매치로 확인해 , 내가 넣어준 유효한 리프래시 토큰인지 검증
+            return new ResponseEntity<>(new RefreshTokenResponse(false, null), HttpStatus.NO_CONTENT);
         }
 
         String newAccessToken = authService.refreshAccessToken(refreshTokenRequest); // 엑세스토큰 새로 만들고
         redisService.deleteValues(key); // 기존에 있던 리프래시 토큰을 삭제
 
-        // 리프래시토큰 새롭게 설정해주기
-        redisService.setValues(keyConfig.keyStore(redisConfig.getRedisKey()) + newAccessToken + request.getRemoteAddr(),
-                keyConfig.keyStore(redisConfig.getRedisValue()),
+        // 리프래시토큰 갱신
+        redisService.setValues(newAccessToken + request.getRemoteAddr(),
+                passwordEncoder.encode(keyConfig.keyStore(redisConfig.getRedisValue() + request.getRemoteAddr())),
                 Duration.ofMillis(jwtConfig.getRefreshExpiration()));
 
+        // 새로운 엑세스 토큰을 발행 함
         return new ResponseEntity<>(new RefreshTokenResponse(true, newAccessToken), HttpStatus.CREATED);
     }
 
