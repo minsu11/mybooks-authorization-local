@@ -2,6 +2,7 @@ package store.mybooks.authorization.jwt.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * packageName    : store.mybooks.front.jwt.dto.request<br>
@@ -16,7 +17,7 @@ import lombok.Getter;
  */
 
 @Getter
-@AllArgsConstructor
+@NoArgsConstructor
 public class TokenRequest {
 
     private Boolean isAdmin;

@@ -2,6 +2,7 @@ package store.mybooks.authorization.jwt.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * packageName    : store.mybooks.authorization.jwt.dto.request<br>
@@ -15,7 +16,7 @@ import lombok.Getter;
  * 3/8/24        masiljangajji       최초 생성
  */
 @Getter
-@AllArgsConstructor
+@NoArgsConstructor
 public class RefreshTokenRequest {
 
     private String accessToken;
