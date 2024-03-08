@@ -3,13 +3,17 @@ package store.mybooks.authorization.jwt.service;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import java.io.OutputStream;
+import java.time.Instant;
 import java.util.Date;
+import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import store.mybooks.authorization.config.JwtConfig;
 import store.mybooks.authorization.config.KeyConfig;
+import store.mybooks.authorization.jwt.dto.request.RefreshTokenRequest;
 import store.mybooks.authorization.jwt.dto.request.TokenRequest;
 
 /**
@@ -26,7 +30,6 @@ import store.mybooks.authorization.jwt.dto.request.TokenRequest;
 @Service
 @RequiredArgsConstructor
 public class TokenService {
-
     private static final String ROLE_ADMIN = "ROLE_ADMIN";
     private static final String ROLE_USER = "ROLE_USER";
 
@@ -39,15 +42,13 @@ public class TokenService {
     // todo 게이트웨이에서 request 에 대한 헤더를 까서 jwt 검증하고 , 권한 체크해서 디나이 시키든 먹이든 한다
     public String createAccessToken(TokenRequest tokenRequest) {
 
-        String role;
-
+        String authority;
 
         if (tokenRequest.getIsAdmin()) {
-            role = ROLE_ADMIN;
+            authority = ROLE_ADMIN;
         } else {
-            role = ROLE_USER;
+            authority = ROLE_USER;
         }
-
 
         Date issuedAt = new Date(System.currentTimeMillis());
 
@@ -55,19 +56,35 @@ public class TokenService {
                 .withIssuer(jwtConfig.getIssuer())
                 .withSubject(String.valueOf(tokenRequest.getUserId())) // 토큰이름 , 이걸로 사용자 식별 todo 이거 변경필요
                 .withIssuedAt(issuedAt) // 발행일
-                .withExpiresAt(new Date(issuedAt.getTime() + jwtConfig.getExpiration())) // 토큰만료일
-                .withClaim("authority", role) // 회원 권한
+                .withExpiresAt(new Date(issuedAt.getTime() + jwtConfig.getAccessExpiration())) // 토큰만료일
+                .withClaim("authority", authority) // 회원 권한
                 .withClaim("status", tokenRequest.getStatus()) // 회원상태
                 .sign(Algorithm.HMAC512(keyConfig.keyStore(jwtConfig.getSecret()))); // 시크릿은 key manager 로 관리
     }
 
-    public String createRefreshToken(String accessToken) {
+    public String refreshAccessToken(RefreshTokenRequest refreshTokenRequest) {
+
+        DecodedJWT jwt = JWT.decode(refreshTokenRequest.getAccessToken());
+
+        Date issuedAt = new Date(System.currentTimeMillis());
+
+        String authority= String.valueOf(jwt.getClaim("authority"));
+        String status = String.valueOf(jwt.getClaim("status"));
+
+        authority= authority.replaceAll("\"","");
+        status=status.replaceAll("\"","");
+
+
 
         return JWT.create()
-                .withSubject("1") // todo 리프레시토큰 로직 변경 필요
-                .withExpiresAt(new Date(System.currentTimeMillis() + jwtConfig.getExpiration())) // 토큰만료일
-                .withClaim("AccessToken", accessToken) // AccessToken
-                .sign(Algorithm.HMAC512(jwtConfig.getSecret())); // 해쉬로 암호처리
+                .withIssuer(jwtConfig.getIssuer())
+                .withSubject(jwt.getSubject())
+                .withIssuedAt(issuedAt)
+                .withExpiresAt(new Date(issuedAt.getTime() + jwtConfig.getAccessExpiration())) // 토큰만료일
+                .withClaim("authority", authority) // 회원 권한
+                .withClaim("status", status) // 회원상태
+                .sign(Algorithm.HMAC512(keyConfig.keyStore(jwtConfig.getSecret()))); // 시크릿은 key manager 로 관리
+
     }
 
 }

@@ -5,25 +5,21 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * packageName    : store.mybooks.front.jwt.dto.request<br>
- * fileName       : TokenRequest<br>
+ * packageName    : store.mybooks.authorization.jwt.dto.request<br>
+ * fileName       : LogoutRequest<br>
  * author         : masiljangajji<br>
- * date           : 2/28/24<br>
+ * date           : 3/8/24<br>
  * description    :
  * ===========================================================
  * DATE              AUTHOR             NOTE
  * -----------------------------------------------------------
- * 2/28/24        masiljangajji       최초 생성
+ * 3/8/24        masiljangajji       최초 생성
  */
 
 @Getter
 @NoArgsConstructor
-public class TokenRequest {
+public class LogoutRequest {
 
-    private Boolean isAdmin;
-
-    private Long userId;
-
-    private String status;
+    private String accessToken;
 
 }

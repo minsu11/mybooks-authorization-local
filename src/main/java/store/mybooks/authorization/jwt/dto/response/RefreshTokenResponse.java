@@ -5,21 +5,23 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * packageName    : store.mybooks.authorization.auth.service.dto.response<br>
- * fileName       : TokenResponse<br>
+ * packageName    : store.mybooks.authorization.jwt.dto.response<br>
+ * fileName       : RefreshTokenResponse<br>
  * author         : masiljangajji<br>
- * date           : 2/28/24<br>
+ * date           : 3/7/24<br>
  * description    :
  * ===========================================================
  * DATE              AUTHOR             NOTE
  * -----------------------------------------------------------
- * 2/28/24        masiljangajji       최초 생성
+ * 3/7/24        masiljangajji       최초 생성
  */
+
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class TokenResponse {
+public class RefreshTokenResponse {
 
+    private Boolean isValid;
     private String accessToken;
 
 }
