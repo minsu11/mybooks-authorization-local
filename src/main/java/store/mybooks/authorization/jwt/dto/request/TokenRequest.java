@@ -26,4 +26,6 @@ public class TokenRequest {
 
     private String status;
 
+    private String uuid;
+
 }
