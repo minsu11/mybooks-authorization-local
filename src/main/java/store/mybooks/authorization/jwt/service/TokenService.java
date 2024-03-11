@@ -10,11 +10,14 @@ import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 import store.mybooks.authorization.config.JwtConfig;
 import store.mybooks.authorization.config.KeyConfig;
 import store.mybooks.authorization.jwt.dto.request.RefreshTokenRequest;
 import store.mybooks.authorization.jwt.dto.request.TokenRequest;
+import store.mybooks.authorization.redis.RedisService;
 
 /**
  * packageName    : store.mybooks.authorization.auth.service<br>
@@ -52,9 +55,10 @@ public class TokenService {
 
         Date issuedAt = new Date(System.currentTimeMillis());
 
+
         return JWT.create()
                 .withIssuer(jwtConfig.getIssuer())
-                .withSubject(String.valueOf(tokenRequest.getUserId())) // 토큰이름 , 이걸로 사용자 식별 todo 이거 변경필요
+                .withSubject(String.valueOf(tokenRequest.getUuid())) // 토큰이름
                 .withIssuedAt(issuedAt) // 발행일
                 .withExpiresAt(new Date(issuedAt.getTime() + jwtConfig.getAccessExpiration())) // 토큰만료일
                 .withClaim("authority", authority) // 회원 권한
@@ -62,9 +66,8 @@ public class TokenService {
                 .sign(Algorithm.HMAC512(keyConfig.keyStore(jwtConfig.getSecret()))); // 시크릿은 key manager 로 관리
     }
 
-    public String refreshAccessToken(RefreshTokenRequest refreshTokenRequest) {
+    public String refreshAccessToken(DecodedJWT jwt) {
 
-        DecodedJWT jwt = JWT.decode(refreshTokenRequest.getAccessToken());
 
         Date issuedAt = new Date(System.currentTimeMillis());
 
@@ -74,8 +77,6 @@ public class TokenService {
         authority= authority.replaceAll("\"","");
         status=status.replaceAll("\"","");
 
-
-
         return JWT.create()
                 .withIssuer(jwtConfig.getIssuer())
                 .withSubject(jwt.getSubject())
@@ -84,7 +85,6 @@ public class TokenService {
                 .withClaim("authority", authority) // 회원 권한
                 .withClaim("status", status) // 회원상태
                 .sign(Algorithm.HMAC512(keyConfig.keyStore(jwtConfig.getSecret()))); // 시크릿은 key manager 로 관리
-
     }
 
 }
