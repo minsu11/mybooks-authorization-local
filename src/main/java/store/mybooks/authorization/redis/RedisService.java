@@ -1,11 +1,8 @@
 package store.mybooks.authorization.redis;
 
 import java.time.Duration;
-import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
@@ -48,6 +45,10 @@ public class RedisService {
     // 삭제함
     public void deleteValues(String key) {
         redisTemplate.delete(key);
+    }
+
+    public void expireValues(String key, Long timeout) {
+        redisTemplate.expire(key, timeout, TimeUnit.MILLISECONDS);
     }
 
 }
