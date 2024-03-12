@@ -63,7 +63,7 @@ public class TokenRestController {
             @RequestBody TokenRequest tokenRequest, HttpServletRequest request) {
 
 
-        String ipAddress = request.getHeader("X-Forwarded-For");
+        String ipAddress = request.getRemoteAddr();
         String userAgent = request.getHeader("User-Agent");
 
         // (UUID+ip+userAgent) Key , 유저아이디 Value
@@ -93,7 +93,7 @@ public class TokenRestController {
     public ResponseEntity<RefreshTokenResponse> refreshAccessToken(@RequestBody RefreshTokenRequest refreshTokenRequest,
                                                                    HttpServletRequest request) {
 
-        String ipAddress = request.getHeader("X-Forwarded-For");
+        String ipAddress = request.getRemoteAddr();
         String userAgent = request.getHeader("User-Agent");
 
         String key = refreshTokenRequest.getAccessToken() + ipAddress+userAgent;
