@@ -133,12 +133,17 @@ public class TokenRestController {
         DecodedJWT jwt = JWT.decode(logoutRequest.getAccessToken());
 
         String ipAddress = logoutRequest.getIp();
+        log.warn("삭제");
+        log.warn(ipAddress);
         String userAgent = logoutRequest.getUserAgent();
+        log.warn(userAgent);
 
         // 기존에 있는 토큰으로는 재발급 못받도록 , 리프래시 토큰 삭제
         redisService.deleteValues(logoutRequest.getAccessToken() + ipAddress + userAgent);
+        log.warn("리프래시 삭제");
         // 유저아이디 담은 레디스 삭제 , 이러면 엑세스토큰을 갖고 있더라도 유저아이디를 담은 레디스가 없기 떄문에 사용이 불가능 함
         redisService.deleteValues(jwt.getSubject() + ipAddress + userAgent);
+        log.warn("유저 삭제");
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
