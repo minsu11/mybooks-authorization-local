@@ -52,7 +52,7 @@ public class RedisConfig {
 
     private final KeyConfig keyConfig;
 
-    // properties 에 저장한 host , post 연결 , 지금은 로컬
+    // properties 에 저장한 host , post 연결
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
 
