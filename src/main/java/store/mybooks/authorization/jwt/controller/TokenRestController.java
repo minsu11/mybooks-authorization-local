@@ -65,8 +65,8 @@ public class TokenRestController {
             @RequestBody TokenRequest tokenRequest, HttpServletRequest request) {
 
 
-        log.warn(request.getRemoteAddr()+"아이피");
-        log.warn(request.getHeaders("X-Forwarded-For")+"헤더");
+        log.warn(request.getRemoteAddr() + "아이피");
+        log.warn(request.getHeaders("X-Forwarded-For") + "헤더");
         log.warn(String.valueOf(request.getHeaders("Proxy-Client-IP")));
         log.warn(String.valueOf(request.getHeaders("WL-Proxy-Client-IP")));
         log.warn(String.valueOf(request.getHeaders("HTTP_CLIENT_IP")));
@@ -76,19 +76,27 @@ public class TokenRestController {
         log.warn(String.valueOf(request.getHeaders("REMOTE_ADDR")));
 
 
-        redisService.setValues(request.getRemoteAddr()+"아이피","d",Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("X-Forwarded-For").toString()+"헤더","d",Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("Proxy-Client-IP").toString()+"클라","d",Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("WL-Proxy-Client-IP").toString()+"we프록시","d",Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("HTTP_CLIENT_IP").toString()+"클라http","d",Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("HTTP_X_FORWARDED_FOR").toString()+"클라_x_","d",Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("X-Real-IP").toString()+"리얼-아이피","d",Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("X-RealIP").toString()+"리얼아이피","d",Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("REMOTE_ADDR").toString()+"리모트","d",Duration.ofMillis(1800000));
-
+        redisService.setValues(request.getRemoteAddr() + "아이피", "d", Duration.ofMillis(1800000));
+        redisService.setValues(request.getHeaders("X-Forwarded-For").toString() + "헤더", "d",
+                Duration.ofMillis(1800000));
+        redisService.setValues(request.getHeaders("Proxy-Client-IP").toString() + "클라", "d",
+                Duration.ofMillis(1800000));
+        redisService.setValues(request.getHeaders("WL-Proxy-Client-IP").toString() + "we프록시", "d",
+                Duration.ofMillis(1800000));
+        redisService.setValues(request.getHeaders("HTTP_CLIENT_IP").toString() + "클라http", "d",
+                Duration.ofMillis(1800000));
+        redisService.setValues(request.getHeaders("HTTP_X_FORWARDED_FOR").toString() + "클라_x_", "d",
+                Duration.ofMillis(1800000));
+        redisService.setValues(request.getHeaders("X-Real-IP").toString() + "리얼-아이피", "d", Duration.ofMillis(1800000));
+        redisService.setValues(request.getHeaders("X-RealIP").toString() + "리얼아이피", "d", Duration.ofMillis(1800000));
+        redisService.setValues(request.getHeaders("REMOTE_ADDR").toString() + "리모트", "d", Duration.ofMillis(1800000));
+        redisService.setValues(tokenRequest.getIp() + "프론트에서온 아이피", "d", Duration.ofMillis(1800000));
+        redisService.setValues(tokenRequest.getUserAgent() + "프론트에서 온 유저 에이전트", "d", Duration.ofMillis(1800000));
 
         String ipAddress = request.getRemoteAddr();
         String userAgent = request.getHeader("User-Agent");
+
+
 
         // (UUID+ip+userAgent) Key , 유저아이디 Value
         // 토큰에는 UUID 값이 기재될 것임
@@ -106,7 +114,7 @@ public class TokenRestController {
         // 재발급시 엑세스 토큰 + ip + UserAgent 로 찾고 ,  Value 를 키메너지가 관리하는 암호 + ip 로 matches 해 검증함
         // 만약 레디스 서버가 털리더라도 키메니저가 관리하는 암호를 모르기 떄문에 Value 검증 에서 실패하게 됨
         // 따라서 리프래시토큰에 대한 변조를 막을 수 있고 , 만료시간이 지나면 자동으로 사라지기 떄문에 관리가 가능 함
-        redisService.setValues(accessToken + ipAddress+userAgent,
+        redisService.setValues(accessToken + ipAddress + userAgent,
                 passwordEncoder.encode(keyConfig.keyStore(redisConfig.getRedisValue()) + ipAddress),
                 Duration.ofMillis(jwtConfig.getRefreshExpiration()));
 
@@ -120,7 +128,7 @@ public class TokenRestController {
         String ipAddress = request.getRemoteAddr();
         String userAgent = request.getHeader("User-Agent");
 
-        String key = refreshTokenRequest.getAccessToken() + ipAddress+userAgent;
+        String key = refreshTokenRequest.getAccessToken() + ipAddress + userAgent;
         String refreshToken = redisService.getValues(key);
 
         // 키 = 엑세스토큰 + ip + UserAgent
@@ -138,12 +146,12 @@ public class TokenRestController {
         redisService.deleteValues(key); // 기존에 있던 리프래시 토큰을 삭제
 
         // 리프래시토큰 갱신
-        redisService.setValues(newAccessToken + ipAddress+userAgent,
+        redisService.setValues(newAccessToken + ipAddress + userAgent,
                 passwordEncoder.encode(keyConfig.keyStore(redisConfig.getRedisValue()) + ipAddress),
                 Duration.ofMillis(jwtConfig.getRefreshExpiration()));
 
         // 유저 아이디를 담아놓은 레디스 갱신
-        redisService.expireValues(jwt.getSubject() + ipAddress+userAgent, jwtConfig.getRefreshExpiration());
+        redisService.expireValues(jwt.getSubject() + ipAddress + userAgent, jwtConfig.getRefreshExpiration());
 
         // 새로운 엑세스 토큰을 발행 함
         return new ResponseEntity<>(new RefreshTokenResponse(true, newAccessToken), HttpStatus.CREATED);
@@ -159,9 +167,9 @@ public class TokenRestController {
         String userAgent = request.getHeader("User-Agent");
 
         // 기존에 있는 토큰으로는 재발급 못받도록 , 리프래시 토큰 삭제
-        redisService.deleteValues(logoutRequest.getAccessToken() + ipAddress+userAgent);
+        redisService.deleteValues(logoutRequest.getAccessToken() + ipAddress + userAgent);
         // 유저아이디 담은 레디스 삭제 , 이러면 엑세스토큰을 갖고 있더라도 유저아이디를 담은 레디스가 없기 떄문에 사용이 불가능 함
-        redisService.deleteValues(jwt.getSubject() + ipAddress+userAgent);
+        redisService.deleteValues(jwt.getSubject() + ipAddress + userAgent);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
