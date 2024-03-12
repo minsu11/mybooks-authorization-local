@@ -1,5 +1,7 @@
 package store.mybooks.authorization.jwt.controller;
 
+import static sun.net.www.protocol.http.HttpURLConnection.userAgent;
+
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import java.time.Duration;
@@ -9,6 +11,7 @@ import java.util.UUID;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -40,6 +43,7 @@ import store.mybooks.authorization.redis.RedisService;
  * -----------------------------------------------------------
  * 2/28/24        masiljangajji       최초 생성
  */
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/auth")
@@ -61,6 +65,18 @@ public class TokenRestController {
     @PostMapping
     public ResponseEntity<TokenResponse> createToken(
             @RequestBody TokenRequest tokenRequest, HttpServletRequest request) {
+
+
+        log.warn(request.getRemoteAddr()+"아이피");
+        log.warn(request.getHeaders("X-Forwarded-For")+"헤더");
+        log.warn(String.valueOf(request.getHeaders("Proxy-Client-IP")));
+        log.warn(String.valueOf(request.getHeaders("WL-Proxy-Client-IP")));
+        log.warn(String.valueOf(request.getHeaders("HTTP_CLIENT_IP")));
+        log.warn(String.valueOf(request.getHeaders("HTTP_X_FORWARDED_FOR")));
+        log.warn(String.valueOf(request.getHeaders("X-Real-IP")));
+        log.warn(String.valueOf(request.getHeaders("X-RealIP")));
+        log.warn(String.valueOf(request.getHeaders("REMOTE_ADDR")));
+        log.warn(userAgent+"유저에이전트");
 
 
         String ipAddress = request.getRemoteAddr();
