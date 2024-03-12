@@ -28,4 +28,9 @@ public class TokenRequest {
 
     private String uuid;
 
+    private String ip;
+
+    private String userAgent;
+
+
 }
