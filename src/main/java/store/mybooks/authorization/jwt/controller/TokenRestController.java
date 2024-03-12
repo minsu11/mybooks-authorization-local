@@ -77,14 +77,14 @@ public class TokenRestController {
 
 
         redisService.setValues(request.getRemoteAddr()+"아이피","d",Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("X-Forwarded-For")+"헤더","d",Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("Proxy-Client-IP")+"클라","d",Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("WL-Proxy-Client-IP")+"we프록시","d",Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("HTTP_CLIENT_IP")+"클라http","d",Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("HTTP_X_FORWARDED_FOR")+"클라_x_","d",Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("X-Real-IP")+"리얼-아이피","d",Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("X-RealIP")+"리얼아이피","d",Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("REMOTE_ADDR")+"리모트","d",Duration.ofMillis(1800000));
+        redisService.setValues(request.getHeaders("X-Forwarded-For").toString()+"헤더","d",Duration.ofMillis(1800000));
+        redisService.setValues(request.getHeaders("Proxy-Client-IP").toString()+"클라","d",Duration.ofMillis(1800000));
+        redisService.setValues(request.getHeaders("WL-Proxy-Client-IP").toString()+"we프록시","d",Duration.ofMillis(1800000));
+        redisService.setValues(request.getHeaders("HTTP_CLIENT_IP").toString()+"클라http","d",Duration.ofMillis(1800000));
+        redisService.setValues(request.getHeaders("HTTP_X_FORWARDED_FOR").toString()+"클라_x_","d",Duration.ofMillis(1800000));
+        redisService.setValues(request.getHeaders("X-Real-IP").toString()+"리얼-아이피","d",Duration.ofMillis(1800000));
+        redisService.setValues(request.getHeaders("X-RealIP").toString()+"리얼아이피","d",Duration.ofMillis(1800000));
+        redisService.setValues(request.getHeaders("REMOTE_ADDR").toString()+"리모트","d",Duration.ofMillis(1800000));
 
 
         String ipAddress = request.getRemoteAddr();
