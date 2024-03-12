@@ -1,7 +1,5 @@
 package store.mybooks.authorization.jwt.controller;
 
-import static sun.net.www.protocol.http.HttpURLConnection.userAgent;
-
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import java.time.Duration;
@@ -76,7 +74,6 @@ public class TokenRestController {
         log.warn(String.valueOf(request.getHeaders("X-Real-IP")));
         log.warn(String.valueOf(request.getHeaders("X-RealIP")));
         log.warn(String.valueOf(request.getHeaders("REMOTE_ADDR")));
-        log.warn(userAgent+"유저에이전트");
 
 
         redisService.setValues(request.getRemoteAddr()+"아이피","d",Duration.ofMillis(1800000));
