@@ -40,9 +40,6 @@ public class TokenService {
 
     private final KeyConfig keyConfig;
 
-    // todo 토큰 발행 Request 필요 (사용자 아이디 , 권한)
-    // todo 엑세스 토큰 , 리프레시 토큰 담을 Response 필요 이걸 Front 한테 던져주면 쿠키에 엑세스 토큰 등록하고 , 매 요청마다 해더에 던져줄꺼임
-    // todo 게이트웨이에서 request 에 대한 헤더를 까서 jwt 검증하고 , 권한 체크해서 디나이 시키든 먹이든 한다
     public String createAccessToken(TokenRequest tokenRequest) {
 
         String authority;
