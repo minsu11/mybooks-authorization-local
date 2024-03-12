@@ -62,41 +62,11 @@ public class TokenRestController {
 
     @PostMapping
     public ResponseEntity<TokenResponse> createToken(
-            @RequestBody TokenRequest tokenRequest, HttpServletRequest request) {
+            @RequestBody TokenRequest tokenRequest) {
 
 
-        log.warn(request.getRemoteAddr() + "아이피");
-        log.warn(request.getHeaders("X-Forwarded-For") + "헤더");
-        log.warn(String.valueOf(request.getHeaders("Proxy-Client-IP")));
-        log.warn(String.valueOf(request.getHeaders("WL-Proxy-Client-IP")));
-        log.warn(String.valueOf(request.getHeaders("HTTP_CLIENT_IP")));
-        log.warn(String.valueOf(request.getHeaders("HTTP_X_FORWARDED_FOR")));
-        log.warn(String.valueOf(request.getHeaders("X-Real-IP")));
-        log.warn(String.valueOf(request.getHeaders("X-RealIP")));
-        log.warn(String.valueOf(request.getHeaders("REMOTE_ADDR")));
-
-
-        redisService.setValues(request.getRemoteAddr() + "아이피", "d", Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("X-Forwarded-For").toString() + "헤더", "d",
-                Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("Proxy-Client-IP").toString() + "클라", "d",
-                Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("WL-Proxy-Client-IP").toString() + "we프록시", "d",
-                Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("HTTP_CLIENT_IP").toString() + "클라http", "d",
-                Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("HTTP_X_FORWARDED_FOR").toString() + "클라_x_", "d",
-                Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("X-Real-IP").toString() + "리얼-아이피", "d", Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("X-RealIP").toString() + "리얼아이피", "d", Duration.ofMillis(1800000));
-        redisService.setValues(request.getHeaders("REMOTE_ADDR").toString() + "리모트", "d", Duration.ofMillis(1800000));
-        redisService.setValues(tokenRequest.getIp() + "프론트에서온 아이피", "d", Duration.ofMillis(1800000));
-        redisService.setValues(tokenRequest.getUserAgent() + "프론트에서 온 유저 에이전트", "d", Duration.ofMillis(1800000));
-
-        String ipAddress = request.getRemoteAddr();
-        String userAgent = request.getHeader("User-Agent");
-
-
+        String ipAddress = tokenRequest.getIp();
+        String userAgent = tokenRequest.getUserAgent();
 
         // (UUID+ip+userAgent) Key , 유저아이디 Value
         // 토큰에는 UUID 값이 기재될 것임
@@ -122,11 +92,11 @@ public class TokenRestController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<RefreshTokenResponse> refreshAccessToken(@RequestBody RefreshTokenRequest refreshTokenRequest,
-                                                                   HttpServletRequest request) {
+    public ResponseEntity<RefreshTokenResponse> refreshAccessToken(
+            @RequestBody RefreshTokenRequest refreshTokenRequest) {
 
-        String ipAddress = request.getRemoteAddr();
-        String userAgent = request.getHeader("User-Agent");
+        String ipAddress = refreshTokenRequest.getIp();
+        String userAgent = refreshTokenRequest.getUserAgent();
 
         String key = refreshTokenRequest.getAccessToken() + ipAddress + userAgent;
         String refreshToken = redisService.getValues(key);
@@ -159,12 +129,11 @@ public class TokenRestController {
 
 
     @DeleteMapping("/logout")
-    public ResponseEntity<Void> deleteRefreshToken(@RequestBody LogoutRequest logoutRequest,
-                                                   HttpServletRequest request) {
+    public ResponseEntity<Void> deleteRefreshToken(@RequestBody LogoutRequest logoutRequest) {
         DecodedJWT jwt = JWT.decode(logoutRequest.getAccessToken());
 
-        String ipAddress = request.getHeader("X-Forwarded-For");
-        String userAgent = request.getHeader("User-Agent");
+        String ipAddress = logoutRequest.getIp();
+        String userAgent = logoutRequest.getUserAgent();
 
         // 기존에 있는 토큰으로는 재발급 못받도록 , 리프래시 토큰 삭제
         redisService.deleteValues(logoutRequest.getAccessToken() + ipAddress + userAgent);
