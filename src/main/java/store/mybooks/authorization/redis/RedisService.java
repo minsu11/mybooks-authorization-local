@@ -26,13 +26,11 @@ public class RedisService {
 
     private final RedisTemplate<String, Object> redisTemplate;
 
-    // Duration 시간동안만 유지되고 후에는 삭제
     public void setValues(String key, String data, Duration duration) {
         ValueOperations<String, Object> values = redisTemplate.opsForValue();
         values.set(key, data, duration);
     }
 
-    // 값 찾아오기 , 없으면 false;
     @Transactional(readOnly = true)
     public String getValues(String key) {
         ValueOperations<String, Object> values = redisTemplate.opsForValue();
@@ -42,7 +40,6 @@ public class RedisService {
         return (String) values.get(key);
     }
 
-    // 삭제함
     public void deleteValues(String key) {
         redisTemplate.delete(key);
     }
