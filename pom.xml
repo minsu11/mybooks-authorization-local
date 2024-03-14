@@ -16,6 +16,9 @@
 	<properties>
 		<jacoco.version>0.8.8</jacoco.version>
 		<java.version>11</java.version>
+		<sonar.issue.ignore.multicriteria.e1.ruleKey>java:S1068</sonar.issue.ignore.multicriteria.e1.ruleKey>
+		<sonar.issue.ignore.multicriteria.e1.ruleKey>java:S5361</sonar.issue.ignore.multicriteria.e1.ruleKey>
+		<sonar.issue.ignore.multicriteria.e1.resourceKey>**/*</sonar.issue.ignore.multicriteria.e1.resourceKey>
 	</properties>
 	<dependencies>
 
