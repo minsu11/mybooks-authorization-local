@@ -3,18 +3,13 @@ package store.mybooks.authorization.jwt.controller;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import java.time.Duration;
-import java.util.Enumeration;
 import java.util.Objects;
-import java.util.UUID;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -133,17 +128,11 @@ public class TokenRestController {
         DecodedJWT jwt = JWT.decode(logoutRequest.getAccessToken());
 
         String ipAddress = logoutRequest.getIp();
-        log.warn("삭제");
-        log.warn(ipAddress);
         String userAgent = logoutRequest.getUserAgent();
-        log.warn(userAgent);
-
         // 기존에 있는 토큰으로는 재발급 못받도록 , 리프래시 토큰 삭제
         redisService.deleteValues(logoutRequest.getAccessToken() + ipAddress + userAgent);
-        log.warn("리프래시 삭제");
         // 유저아이디 담은 레디스 삭제 , 이러면 엑세스토큰을 갖고 있더라도 유저아이디를 담은 레디스가 없기 떄문에 사용이 불가능 함
         redisService.deleteValues(jwt.getSubject() + ipAddress + userAgent);
-        log.warn("유저 삭제");
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
