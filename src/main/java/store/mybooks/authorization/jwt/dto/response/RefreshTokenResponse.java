@@ -21,7 +21,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class RefreshTokenResponse {
 
-    private Boolean isValid;
     private String accessToken;
 
 }
