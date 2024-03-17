@@ -102,7 +102,7 @@ public class TokenRestController {
         if (Objects.isNull(refreshToken) ||
                 !passwordEncoder.matches(keyConfig.keyStore(redisConfig.getRedisValue()) + ipAddress,
                         refreshToken)) { // null 이면 만료된 것 , BCrypt 로 잠근 값을 매치로 확인해 , 내가 넣어준 유효한 리프래시 토큰인지 검증
-            return new ResponseEntity<>(new RefreshTokenResponse(false, null), HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>(new RefreshTokenResponse(null), HttpStatus.CREATED);
         }
 
         DecodedJWT jwt = JWT.decode(refreshTokenRequest.getAccessToken());
@@ -119,7 +119,7 @@ public class TokenRestController {
         redisService.expireValues(jwt.getSubject() + ipAddress + userAgent, jwtConfig.getRefreshExpiration());
 
         // 새로운 엑세스 토큰을 발행 함
-        return new ResponseEntity<>(new RefreshTokenResponse(true, newAccessToken), HttpStatus.CREATED);
+        return new ResponseEntity<>(new RefreshTokenResponse(newAccessToken), HttpStatus.CREATED);
     }
 
 
