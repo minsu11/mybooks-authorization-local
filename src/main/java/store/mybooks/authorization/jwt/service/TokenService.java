@@ -62,11 +62,9 @@ public class TokenService {
 
         Date issuedAt = new Date(System.currentTimeMillis());
 
-        String authority = String.valueOf(jwt.getClaim(AUTHORITY));
-        String status = String.valueOf(jwt.getClaim(STATUS));
+        String authority = jwt.getClaim(AUTHORITY).asString();
+        String status = jwt.getClaim(STATUS).asString();
 
-        authority = authority.replaceAll("\"", "");
-        status = status.replaceAll("\"", "");
 
         return JWT.create()
                 .withIssuer(jwtConfig.getIssuer())
