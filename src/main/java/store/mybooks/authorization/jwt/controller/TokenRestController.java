@@ -54,6 +54,20 @@ public class TokenRestController {
     private final PasswordEncoder passwordEncoder;
 
 
+    /**
+     * methodName : createToken
+     * author : masiljangajji
+     * description : 로그인시 JWT 엑세스 토큰과 Refresh Token 을 발행함
+     * TokenRequest 에 유저의 정보 뿐 아니라 ip , X-User-Agent 의 부가정보도 포함
+     * 토큰에 유저 아이디를 기입하지 않기 위해서 페이로드에 UUID 를 넣고 , 그에 매칭되는 userId 정보를 레디스에 삽입함
+     * 이 값은 gateway 에서 UUID + ip + X-User-Agent 를 이용해 userId 를 가져올 것임
+     * 리프래시 토큰은 JWT 의 형태는 아니고 , 키메니저에서 관리하는 암호값 + ip 를 비크립트로 감싼 값
+     * 만약 레디스가 탈취당한다 해도 비크립트로 감싸져있기 떄문에 원문을 알 수 없고 , 키메니저가 관리하는 암호값을 모르기 떄문에 조작이 불가능함
+     * 리프래시토큰은 Access Token + ip + X-User-Agent 정보를 이용해 가져올 수 있음
+     *
+     * @param tokenRequest request
+     * @return response entity
+     */
     @PostMapping
     public ResponseEntity<TokenResponse> createToken(
             @RequestBody TokenRequest tokenRequest) {
@@ -62,26 +76,11 @@ public class TokenRestController {
         String ipAddress = tokenRequest.getIp();
         String userAgent = tokenRequest.getUserAgent();
 
-
-
-        // (UUID+ip+userAgent) Key , 유저아이디 Value
-        // 토큰에는 UUID 값이 기재될 것임
-        // 이 값을 gateway 에서 UUID 를 키로 사용자 Id 를 찾음  , 해킹하려면 엑세스토큰 , ip , userAgent 모두 알아야 해킹 가능 함
         redisService.setValues(tokenRequest.getUuid() + ipAddress + userAgent,
                 String.valueOf(tokenRequest.getUserId()),
                 Duration.ofMillis(jwtConfig.getRefreshExpiration()));
 
-
-        // UUID 가 들어간 토큰
         String accessToken = authService.createAccessToken(tokenRequest);
-
-        // Key = 엑세스 토큰 + ip + UserAgent
-        // Value = (키메너지가 관리하는 암호 + ip) 를 BCrypt 로 잠근 값
-        // 이것에 대해서 만료시간을 줌 , 일정시간이 지나면 자동으로 삭제되게 만듦
-        // 재발급시 엑세스 토큰 + ip + UserAgent 로 찾고 ,  Value 를 키메너지가 관리하는 암호 + ip 로 matches 해 검증함
-        // 만약 레디스 서버가 털리더라도 키메니저가 관리하는 암호를 모르기 떄문에 Value 검증 에서 실패하게 됨
-        // 따라서 리프래시토큰에 대한 변조를 막을 수 있고 , 만료시간이 지나면 자동으로 사라지기 떄문에 관리가 가능 함
-
 
         redisService.setValues(accessToken + ipAddress + userAgent,
                 passwordEncoder.encode(keyConfig.keyStore(redisConfig.getRedisValue()) + ipAddress),
@@ -90,6 +89,18 @@ public class TokenRestController {
         return new ResponseEntity<>(new TokenResponse(accessToken), HttpStatus.CREATED);
     }
 
+    /**
+     * methodName : refreshAccessToken
+     * author : masiljangajji
+     * description : 엑세스토큰 만료시 재발급을 요청을 보냄
+     * 엑세스토큰 + ip + X-User-Agent 를 이용해 레디스에 리프래시토큰이 존재하는지 확인
+     * 만약 존재한다면 키 메니저가 관리하는 암호값 + ip 주소를 비크립트로 매치시킴 (이것으로 리프래시토큰 변조를 검증)
+     * 만약 리프래시토큰이 만료되지 않고 유효하다면 새로운 엑세스 토큰을 발행하고 기존의 리프래시토큰을 레디스에서 삭제 후 새롭게 넣어줌
+     * 유저 아이디를 저장하는 레디스는 만료시간을 갱신시켜줌
+     *
+     * @param refreshTokenRequest token request
+     * @return response entity
+     */
     @PostMapping("/refresh")
     public ResponseEntity<TokenResponse> refreshAccessToken(
             @RequestBody RefreshTokenRequest refreshTokenRequest) {
@@ -101,42 +112,45 @@ public class TokenRestController {
         String key = refreshTokenRequest.getAccessToken() + ipAddress + userAgent;
         String refreshToken = redisService.getValues(key);
 
-        // 키 = 엑세스토큰 + ip + UserAgent
-        // 벨류 = 암호화한 값 + ip 를 Bcrypt 로 잠근 값
-        // 리프래시 토큰이 있고 , Value 가 검증이 완료됐다면 패스 , 아니면 false 를 담은 응답 반환
         if (Objects.isNull(refreshToken) ||
                 !passwordEncoder.matches(keyConfig.keyStore(redisConfig.getRedisValue()) + ipAddress,
-                        refreshToken)) { // null 이면 만료된 것 , BCrypt 로 잠근 값을 매치로 확인해 , 내가 넣어준 유효한 리프래시 토큰인지 검증
+                        refreshToken)) {
             return new ResponseEntity<>(new TokenResponse(null), HttpStatus.CREATED);
         }
 
         DecodedJWT jwt = JWT.decode(refreshTokenRequest.getAccessToken());
 
-        String newAccessToken = authService.refreshAccessToken(jwt); // 엑세스토큰 새로 만들고
-        redisService.deleteValues(key); // 기존에 있던 리프래시 토큰을 삭제
+        String newAccessToken = authService.refreshAccessToken(jwt);
+        redisService.deleteValues(key);
 
-        // 리프래시토큰 갱신
         redisService.setValues(newAccessToken + ipAddress + userAgent,
                 passwordEncoder.encode(keyConfig.keyStore(redisConfig.getRedisValue()) + ipAddress),
                 Duration.ofMillis(jwtConfig.getRefreshExpiration()));
 
-        // 유저 아이디를 담아놓은 레디스 갱신
         redisService.expireValues(jwt.getSubject() + ipAddress + userAgent, jwtConfig.getRefreshExpiration());
 
-        // 새로운 엑세스 토큰을 발행 함
         return new ResponseEntity<>(new TokenResponse(newAccessToken), HttpStatus.CREATED);
     }
 
 
+    /**
+     * methodName : deleteRefreshToken
+     * author : masiljangajji
+     * description : 로그아웃 요청이 올 시 레디스에서 유저아이디와 리프래시 토큰의 정보를 삭제함
+     * 기존의 엑세스 토큰은 유효하지만 로그아웃시 유저아이디를 담고있는 정보가 사라지기 떄문에
+     * gateway 에서 검증시 UUID 에 해당하는 유저아이디 정보를 가져오지 못해 InValid 하다는 판단을 하게 됨
+     * 따라서 로그아웃시 기존의 엑세스토큰은 무력화되는 효과를 갖게 됨
+     *
+     * @param logoutRequest request
+     * @return response entity
+     */
     @DeleteMapping("/logout")
     public ResponseEntity<Void> deleteRefreshToken(@RequestBody LogoutRequest logoutRequest) {
         DecodedJWT jwt = JWT.decode(logoutRequest.getAccessToken());
 
         String ipAddress = logoutRequest.getIp();
         String userAgent = logoutRequest.getUserAgent();
-        // 기존에 있는 토큰으로는 재발급 못받도록 , 리프래시 토큰 삭제
         redisService.deleteValues(logoutRequest.getAccessToken() + ipAddress + userAgent);
-        // 유저아이디 담은 레디스 삭제 , 이러면 엑세스토큰을 갖고 있더라도 유저아이디를 담은 레디스가 없기 떄문에 사용이 불가능 함
         redisService.deleteValues(jwt.getSubject() + ipAddress + userAgent);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
