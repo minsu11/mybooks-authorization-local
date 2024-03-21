@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
 /**
@@ -28,6 +29,7 @@ import org.springframework.test.context.TestPropertySource;
  * 3/21/24        masiljangajji       최초 생성
  */
 @SpringBootTest
+@ActiveProfiles("test")
 @TestPropertySource(properties = {
         "key.manager.url=testUrl",
         "key.manager.path=testPath",
