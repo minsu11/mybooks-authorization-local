@@ -44,14 +44,14 @@ class RedisServiceTest {
     }
 
     @Test
-    @DisplayName("Redis에 데이터를 저장하면 정상적으로 조회된다.")
+    @DisplayName("Redis에 데이터를 저장시 정상 조회.")
     void givenKey_whenCallGetValues_thenReturnValue() {
         String findValue = String.valueOf(redisService.getValues(KEY));
         Assertions.assertEquals(VALUE, findValue);
     }
 
     @Test
-    @DisplayName("Redis에 저장된 데이터를 수정할 수 있다.")
+    @DisplayName("Redis에 저장된 데이터를 수정.")
     void givenKeyAndValue_whenCallSetValues_thenChangeValue() {
 
         String updateValue = "updateValue";
@@ -64,12 +64,10 @@ class RedisServiceTest {
     }
 
     @Test
-    @DisplayName("Redis에 저장된 데이터는 만료시간이 지나면 삭제된다.")
+    @DisplayName("Redis에 저장된 데이터 만료시간 지날시 삭제.")
     void givenExpiredValue_whenCallGetValues_thenReturnNull() throws InterruptedException {
         String findValue = redisService.getValues(KEY);
-
         Thread.sleep(60);
-
         String expiredValue = redisService.getValues(KEY);
         assertNotEquals(expiredValue, findValue);
         assertNull(expiredValue);
@@ -77,7 +75,7 @@ class RedisServiceTest {
 
 
     @Test
-    @DisplayName("Redis에 저장된 데이터를 삭제할 수 있다.")
+    @DisplayName("Redis에 저장된 데이터를 삭제")
     void givenKey_whenCallDeleteValues_thenDeleteData()  {
         redisService.deleteValues(KEY);
         String findValue = redisService.getValues(KEY);
