@@ -63,12 +63,15 @@ public class TokenRestController {
         String ipAddress = tokenRequest.getIp();
         String userAgent = tokenRequest.getUserAgent();
 
+
+
         // (UUID+ip+userAgent) Key , 유저아이디 Value
         // 토큰에는 UUID 값이 기재될 것임
         // 이 값을 gateway 에서 UUID 를 키로 사용자 Id 를 찾음  , 해킹하려면 엑세스토큰 , ip , userAgent 모두 알아야 해킹 가능 함
         redisService.setValues(tokenRequest.getUuid() + ipAddress + userAgent,
                 String.valueOf(tokenRequest.getUserId()),
                 Duration.ofMillis(jwtConfig.getRefreshExpiration()));
+
 
         // UUID 가 들어간 토큰
         String accessToken = authService.createAccessToken(tokenRequest);
@@ -79,6 +82,8 @@ public class TokenRestController {
         // 재발급시 엑세스 토큰 + ip + UserAgent 로 찾고 ,  Value 를 키메너지가 관리하는 암호 + ip 로 matches 해 검증함
         // 만약 레디스 서버가 털리더라도 키메니저가 관리하는 암호를 모르기 떄문에 Value 검증 에서 실패하게 됨
         // 따라서 리프래시토큰에 대한 변조를 막을 수 있고 , 만료시간이 지나면 자동으로 사라지기 떄문에 관리가 가능 함
+
+
         redisService.setValues(accessToken + ipAddress + userAgent,
                 passwordEncoder.encode(keyConfig.keyStore(redisConfig.getRedisValue()) + ipAddress),
                 Duration.ofMillis(jwtConfig.getRefreshExpiration()));
@@ -87,8 +92,9 @@ public class TokenRestController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<RefreshTokenResponse> refreshAccessToken(
+    public ResponseEntity<TokenResponse> refreshAccessToken(
             @RequestBody RefreshTokenRequest refreshTokenRequest) {
+
 
         String ipAddress = refreshTokenRequest.getIp();
         String userAgent = refreshTokenRequest.getUserAgent();
@@ -102,7 +108,7 @@ public class TokenRestController {
         if (Objects.isNull(refreshToken) ||
                 !passwordEncoder.matches(keyConfig.keyStore(redisConfig.getRedisValue()) + ipAddress,
                         refreshToken)) { // null 이면 만료된 것 , BCrypt 로 잠근 값을 매치로 확인해 , 내가 넣어준 유효한 리프래시 토큰인지 검증
-            return new ResponseEntity<>(new RefreshTokenResponse(null), HttpStatus.CREATED);
+            return new ResponseEntity<>(new TokenResponse(null), HttpStatus.CREATED);
         }
 
         DecodedJWT jwt = JWT.decode(refreshTokenRequest.getAccessToken());
@@ -119,7 +125,7 @@ public class TokenRestController {
         redisService.expireValues(jwt.getSubject() + ipAddress + userAgent, jwtConfig.getRefreshExpiration());
 
         // 새로운 엑세스 토큰을 발행 함
-        return new ResponseEntity<>(new RefreshTokenResponse(newAccessToken), HttpStatus.CREATED);
+        return new ResponseEntity<>(new TokenResponse(newAccessToken), HttpStatus.CREATED);
     }
 
 
