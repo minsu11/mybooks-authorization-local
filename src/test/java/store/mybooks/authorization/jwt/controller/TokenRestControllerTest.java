@@ -1,19 +1,27 @@
 package store.mybooks.authorization.jwt.controller;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Duration;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -21,6 +29,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import store.mybooks.authorization.config.JwtConfig;
 import store.mybooks.authorization.config.KeyConfig;
@@ -46,6 +55,10 @@ import store.mybooks.authorization.redis.RedisService;
 @WebMvcTest(value = TokenRestController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @ExtendWith(MockitoExtension.class)
+@TestPropertySource(properties = {
+        "jwt.access.expiration=3600",
+        "jwt.refresh.expiration=7200"
+})
 class TokenRestControllerTest {
 
     @Autowired
@@ -83,30 +96,50 @@ class TokenRestControllerTest {
 
 
         when(tokenService.createAccessToken(any(TokenRequest.class))).thenReturn("access-token");
+        String requestBody = "{\"uuid\": \"test\", \"ip\": \"127.0.0.1\", \"userAgent\": \"Mozilla/5.0\", \"userId\": 123}";
 
         mockMvc.perform(post("/auth")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new TokenRequest())))
+                        .content(requestBody))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.accessToken").exists())
-                .andReturn();
+                .andExpect(jsonPath("$.accessToken").exists());
+
+        ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> valueCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Duration> durationCaptor = ArgumentCaptor.forClass(Duration.class);
+        verify(redisService, times(2)).setValues(keyCaptor.capture(), valueCaptor.capture(), durationCaptor.capture());
+
+        assertEquals("test127.0.0.1Mozilla/5.0", keyCaptor.getAllValues().get(0));
+        assertEquals("123", valueCaptor.getAllValues().get(0));
     }
 
     @Test
-    @DisplayName("RefreshTokenRequest 로 refreshAccessToken 실행시 TokenResponse 반환 (Refresh Token 정상)")
-    void givenRefreshTokenRequest_whenCallRefreshAccessToken_thenReturnRefreshTokenResponse()
-            throws Exception {
+    @DisplayName("RefreshTokenRequest로 refreshAccessToken 실행시 TokenResponse 반환")
+    void givenRefreshTokenRequest_whenCallRefreshAccessToken_thenReturnTokenResponse() throws Exception {
+        RefreshTokenRequest refreshTokenRequest = new RefreshTokenRequest(ACCESS_TOKEN,"127.0.0.1","Mozilla/5.0");
 
 
-        when(tokenService.refreshAccessToken(any(DecodedJWT.class))).thenReturn("refreshed-access-token");
-        when(redisService.getValues(anyString())).thenReturn("valid refresh token");
-        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+        DecodedJWT jwt = JWT.decode(refreshTokenRequest.getAccessToken());
+        String newAccessToken = "new-access-token";
+        when(tokenService.refreshAccessToken(any(DecodedJWT.class))).thenReturn(newAccessToken);
+
+        String ipAddress = refreshTokenRequest.getIp();
+        String userAgent = refreshTokenRequest.getUserAgent();
+        String refreshToken = "refresh-token";
+        when(redisService.getValues(refreshTokenRequest.getAccessToken() + ipAddress + userAgent)).thenReturn(refreshToken);
+
+        String key = keyConfig.keyStore(redisConfig.getRedisValue()) + ipAddress;
+        when(passwordEncoder.matches(eq(key), eq(refreshToken))).thenReturn(true);
 
         mockMvc.perform(post("/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(refreshTokenRequest)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.accessToken").exists());
+                .andExpect(jsonPath("$.accessToken").value(newAccessToken));
+
+        verify(redisService).getValues(refreshTokenRequest.getAccessToken() + ipAddress + userAgent);
+        verify(redisService).deleteValues(refreshTokenRequest.getAccessToken() + ipAddress + userAgent);
+        verify(redisService).expireValues(eq(jwt.getSubject() + ipAddress + userAgent), anyLong());
     }
 
     @Test
@@ -114,7 +147,6 @@ class TokenRestControllerTest {
     void givenRefreshTokenRequest_whenCallRefreshAccessTokenAndRefreshTokenExpired_thenReturnRefreshTokenResponseWithNull()
             throws Exception {
 
-        when(tokenService.refreshAccessToken(any(DecodedJWT.class))).thenReturn("refreshed-access-token");
         when(redisService.getValues(anyString())).thenReturn(null);
 
         mockMvc.perform(post("/auth/refresh")
@@ -129,7 +161,6 @@ class TokenRestControllerTest {
     void givenNotValidRefreshTokenRequest_whenCallRefreshAccessToken_thenReturnRefreshTokenResponse()
             throws Exception {
 
-        when(tokenService.refreshAccessToken(any(DecodedJWT.class))).thenReturn("refreshed-access-token");
         when(redisService.getValues(anyString())).thenReturn("access-token");
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
@@ -145,7 +176,7 @@ class TokenRestControllerTest {
     @DisplayName("LogoutRequest 로 deleteRefreshToken 실행시 NO CONTENT")
     void deleteRefreshToken() throws Exception {
 
-        LogoutRequest logoutRequest = new LogoutRequest(ACCESS_TOKEN,"ip","user-agent");
+        LogoutRequest logoutRequest = new LogoutRequest(ACCESS_TOKEN,"127.0.0.1","Mozilla/5.0");
 
         doNothing().when(redisService).deleteValues(anyString());
 
@@ -153,7 +184,12 @@ class TokenRestControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(logoutRequest)))
                 .andExpect(status().isNoContent());
+
+        verify(redisService).deleteValues(ACCESS_TOKEN+"127.0.0.1Mozilla/5.0");
+        verify(redisService).deleteValues("8765cf05-441d-4ce6-944d-934db6973929127.0.0.1Mozilla/5.0");
     }
+
+
 
 
 }

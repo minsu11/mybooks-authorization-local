@@ -49,12 +49,12 @@ public class TokenService {
 
         return JWT.create()
                 .withIssuer(jwtConfig.getIssuer())
-                .withSubject(String.valueOf(tokenRequest.getUuid())) // 토큰이름
-                .withIssuedAt(issuedAt) // 발행일
-                .withExpiresAt(new Date(issuedAt.getTime() + jwtConfig.getAccessExpiration())) // 토큰만료일
-                .withClaim(AUTHORITY, authority) // 회원 권한
-                .withClaim(STATUS, tokenRequest.getStatus()) // 회원상태
-                .sign(Algorithm.HMAC512(keyConfig.keyStore(jwtConfig.getSecret()))); // 시크릿은 key manager 로 관리
+                .withSubject(String.valueOf(tokenRequest.getUuid()))
+                .withIssuedAt(issuedAt)
+                .withExpiresAt(new Date(issuedAt.getTime() + jwtConfig.getAccessExpiration()))
+                .withClaim(AUTHORITY, authority)
+                .withClaim(STATUS, tokenRequest.getStatus())
+                .sign(Algorithm.HMAC512(keyConfig.keyStore(jwtConfig.getSecret())));
     }
 
     public String refreshAccessToken(DecodedJWT jwt) {
@@ -70,10 +70,10 @@ public class TokenService {
                 .withIssuer(jwtConfig.getIssuer())
                 .withSubject(jwt.getSubject())
                 .withIssuedAt(issuedAt)
-                .withExpiresAt(new Date(issuedAt.getTime() + jwtConfig.getAccessExpiration())) // 토큰만료일
-                .withClaim(AUTHORITY, authority) // 회원 권한
-                .withClaim(STATUS, status) // 회원상태
-                .sign(Algorithm.HMAC512(keyConfig.keyStore(jwtConfig.getSecret()))); // 시크릿은 key manager 로 관리
+                .withExpiresAt(new Date(issuedAt.getTime() + jwtConfig.getAccessExpiration()))
+                .withClaim(AUTHORITY, authority)
+                .withClaim(STATUS, status)
+                .sign(Algorithm.HMAC512(keyConfig.keyStore(jwtConfig.getSecret())));
     }
 
 }
