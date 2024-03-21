@@ -20,7 +20,6 @@ import store.mybooks.authorization.config.RedisConfig;
 import store.mybooks.authorization.jwt.dto.request.LogoutRequest;
 import store.mybooks.authorization.jwt.dto.request.RefreshTokenRequest;
 import store.mybooks.authorization.jwt.dto.request.TokenRequest;
-import store.mybooks.authorization.jwt.dto.response.RefreshTokenResponse;
 import store.mybooks.authorization.jwt.dto.response.TokenResponse;
 import store.mybooks.authorization.jwt.service.TokenService;
 import store.mybooks.authorization.redis.RedisService;
